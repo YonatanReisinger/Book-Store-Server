@@ -1,11 +1,10 @@
 import pandas as pd
-from BookStoreServer import BookStoreServer
 from Book import Book
 
 class BookStore:
 
 
-    def __init__(self, genres_lst: list, range_of_valid_print_years: tuple, books_properties: list, online_store_ip="127.0.0.1", online_store_port=8574):
+    def __init__(self, genres_lst: list, range_of_valid_print_years: tuple, books_properties: list):
         self.__genres = list()
         self.__range_of_valid_print_years = tuple()
         self.__books_properties = list()
@@ -16,7 +15,7 @@ class BookStore:
         self.set_books_properties(books_properties)
 
         self.__books_data = pd.DataFrame(columns=books_properties)
-        self.__online_store_server = BookStoreServer(host=online_store_ip, port=online_store_port)
+        self.__online_store_server = None
 
     # --------------------- State Changers ---------------------
 
@@ -48,6 +47,9 @@ class BookStore:
 
         return error_message
 
+    def add_website(self, server):
+        self.__online_store_server = server
+
     # --------------------- Queries ---------------------
     def is_book_in_store(self, book: Book):
         book_title_in_store = book.title.lower()
@@ -55,6 +57,81 @@ class BookStore:
 
     def is_book_print_year_in_range(self, book: Book):
         return self.__range_of_valid_print_years[0] <= book.year <= self.__range_of_valid_print_years[1]
+
+    def is_genre_in_store(self, genre: str):
+        return genre in self.__genres
+
+    def get_books_count(self, author: str = None, price_bigger_than: int = None, price_less_than: int = None
+                        , year_bigger_than: int = None, year_less_than: int = None, genres: list = None):
+
+        params = [author, price_bigger_than, price_less_than, year_bigger_than, year_less_than, genres]
+
+        if genres is not None and not all(genre.isupper() for genre in genres):
+            return "bad request"
+
+        condition_author = self.__books_data["author"] == author
+        condition_price_bigger_than = self.__books_data["price"] >= price_bigger_than
+        condition_price_less_than = self.__books_data["price"] <= price_less_than
+        condition_year_bigger_than = self.__books_data["year"] >= year_bigger_than
+        condition_year_less_than = self.__books_data["year"] <= year_less_than
+        condition_genres = self.__books_data["genres"].apply(lambda book_genres: genres is not None and not set(genres).isdisjoint(book_genres))
+
+        all_conditions = [condition_author, condition_price_bigger_than, condition_price_less_than
+                          , condition_year_bigger_than, condition_year_less_than, condition_genres]
+        requested_conditions = []
+        for i in range(len(params)):
+            if params[i] is not None:
+                requested_conditions.append(all_conditions[i])
+
+        if len(requested_conditions) == 0:
+            return self.__num_of_books
+        else:
+            # Combine all conditions using the AND operator
+            combined_requested_conditions = requested_conditions[0]
+            for condition in requested_conditions[1:]:
+                combined_requested_conditions &= condition
+            df_with_all_conditions = self.__books_data[combined_requested_conditions]
+            return len(df_with_all_conditions)
+
+
+
+
+    def get_books_written_by(self, author: str):
+        books_df = self.__books_data
+        condition = books_df["author"] == author
+        books_written_by_author = books_df[condition]
+        return books_written_by_author
+
+    def get_books_more_expensive_than(self, price: int):
+        books_df = self.__books_data
+        condition = books_df["price"] >= price
+        books_more_expensive_than = books_df[condition]
+        return books_more_expensive_than
+
+    def get_books_cheaper_than(self, price: int):
+        books_df = self.__books_data
+        condition = books_df["price"] <= price
+        books_cheaper_than = books_df[condition]
+        return books_cheaper_than
+
+    def get_books_written_after(self, year: int):
+        books_df = self.__books_data
+        condition = books_df["year"] >= year
+        books_written_after = books_df[condition]
+        return books_written_after
+
+    def get_books_written_before(self, year: int):
+        books_df = self.__books_data
+        condition = books_df["year"] <= year
+        books_written_before = books_df[condition]
+        return books_written_before
+
+    def get_books_in_genres(self, genres: list):
+        books_df = self.__books_data
+        condition = books_df["genres"].apply(lambda book_genres: not set(genres).isdisjoint(book_genres))
+        books_in_genres = books_df[condition]
+        return books_in_genres
+
 
     # --------------------- Setters ---------------------
     def set_genres(self, genres_lst: list):
@@ -81,5 +158,8 @@ class BookStore:
 
     def get_books_data_df(self):
         return self.__books_data
+
+    def get_num_of_books(self):
+        return self.__num_of_books
 
 
