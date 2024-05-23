@@ -114,43 +114,6 @@ class BookStore:
         else:
             return book_with_id_df.iloc[0], True
 
-    def get_books_written_by(self, author: str):
-        books_df = self.__books_data
-        condition = books_df["author"] == author
-        books_written_by_author = books_df[condition]
-        return books_written_by_author
-
-    def get_books_more_expensive_than(self, price: int):
-        books_df = self.__books_data
-        condition = books_df["price"] >= price
-        books_more_expensive_than = books_df[condition]
-        return books_more_expensive_than
-
-    def get_books_cheaper_than(self, price: int):
-        books_df = self.__books_data
-        condition = books_df["price"] <= price
-        books_cheaper_than = books_df[condition]
-        return books_cheaper_than
-
-    def get_books_written_after(self, year: int):
-        books_df = self.__books_data
-        condition = books_df["year"] >= year
-        books_written_after = books_df[condition]
-        return books_written_after
-
-    def get_books_written_before(self, year: int):
-        books_df = self.__books_data
-        condition = books_df["year"] <= year
-        books_written_before = books_df[condition]
-        return books_written_before
-
-    def get_books_in_genres(self, genres: list):
-        books_df = self.__books_data
-        condition = books_df["genres"].apply(lambda book_genres: not set(genres).isdisjoint(book_genres))
-        books_in_genres = books_df[condition]
-        return books_in_genres
-
-
     # --------------------- Setters ---------------------
     def set_genres(self, genres_lst: list):
         if all(isinstance(genre, str) for genre in genres_lst):
