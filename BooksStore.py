@@ -8,7 +8,7 @@ class BookStore:
         self.__genres = list()
         self.__range_of_valid_print_years = tuple()
         self.__books_properties = list()
-        self.__num_of_books = 0
+        self.__id_for_next_book = 1
 
         self.set_genres(genres_lst)
         self.set_range_of_valid_publication_year(range_of_valid_print_years)
@@ -26,15 +26,15 @@ class BookStore:
 
         elif self.is_book_print_year_in_range(new_book) == False:
 
-            error_message = (f"Error: Can’t create new Book that its year [{new_book.print_year}] "
+            error_message = (f"Error: Can’t create new Book that its year [{new_book.year}] "
                              f"is not in the accepted range [{self.__range_of_valid_print_years[0]} -> {self.__range_of_valid_print_years[1]}]")
 
         elif new_book.price <= 0:
             error_message = "Error: Can’t create new Book with negative price"
 
         else:
-            self.__num_of_books += 1
-            new_book_id = self.__num_of_books
+            new_book_id = self.__id_for_next_book
+            self.__id_for_next_book += 1
             new_book_properties = new_book.get_properties()
             new_book_properties_in_store = {"id": new_book_id}
             # Add existing key-value pairs to the new dictionary
@@ -50,7 +50,20 @@ class BookStore:
     def add_website(self, server):
         self.__online_store_server = server
 
+    def update_book_price(self, id: int, new_price: int):
+        if new_price > 0:
+            self.__books_data.loc[self.__books_data['id'] == id, 'price'] = new_price
+
+    def remove_book_by_id(self, id: int):
+        if self.is_book_id_in_store(id):
+            condition = self.__books_data['id'] != id
+            self.__books_data = self.__books_data[condition]
+
     # --------------------- Queries ---------------------
+
+    def is_book_id_in_store(self, id: int):
+        return id in self.__books_data["id"].values
+
     def is_book_in_store(self, book: Book):
         book_title_in_store = book.title.lower()
         return book_title_in_store in self.__books_data["title"].values
@@ -61,13 +74,10 @@ class BookStore:
     def is_genre_in_store(self, genre: str):
         return genre in self.__genres
 
-    def get_books_count(self, author: str = None, price_bigger_than: int = None, price_less_than: int = None
+    def get_books(self, author: str = None, price_bigger_than: int = None, price_less_than: int = None
                         , year_bigger_than: int = None, year_less_than: int = None, genres: list = None):
 
         params = [author, price_bigger_than, price_less_than, year_bigger_than, year_less_than, genres]
-
-        if genres is not None and not all(genre.isupper() for genre in genres):
-            return "bad request"
 
         condition_author = self.__books_data["author"] == author
         condition_price_bigger_than = self.__books_data["price"] >= price_bigger_than
@@ -84,17 +94,25 @@ class BookStore:
                 requested_conditions.append(all_conditions[i])
 
         if len(requested_conditions) == 0:
-            return self.__num_of_books
+            return self.__books_data
         else:
             # Combine all conditions using the AND operator
             combined_requested_conditions = requested_conditions[0]
             for condition in requested_conditions[1:]:
                 combined_requested_conditions &= condition
-            df_with_all_conditions = self.__books_data[combined_requested_conditions]
-            return len(df_with_all_conditions)
 
+            return self.__books_data[combined_requested_conditions]
 
-
+    def get_book_by_id(self, id: int, as_dict=False):
+        books_df = self.__books_data
+        condition = books_df["id"] == id
+        book_with_id_df = books_df[condition]
+        if book_with_id_df.empty:
+            return {}, False
+        elif as_dict is True:
+            return book_with_id_df.iloc[0].to_dict(), True
+        else:
+            return book_with_id_df.iloc[0], True
 
     def get_books_written_by(self, author: str):
         books_df = self.__books_data
@@ -160,6 +178,9 @@ class BookStore:
         return self.__books_data
 
     def get_num_of_books(self):
-        return self.__num_of_books
+        return len(self.__books_data)
+
+    def get_genres(self):
+        return list(self.__genres)
 
 

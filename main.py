@@ -5,6 +5,7 @@ from BooksStore import BookStore
 from Book import Book
 
 if __name__ == "__main__":
+
     genres_lst = ["SCI_FI", "NOVEL", "HISTORY", "MANGA", "ROMANCE","PROFESSIONAL"]
     range_of_valid_publication_year = (1940, 2100)
     books_properties = ["id", "title", "author", "price", "year", "genres"]
