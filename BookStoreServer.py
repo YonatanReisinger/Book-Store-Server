@@ -1,8 +1,13 @@
 from flask import Flask, request, jsonify
 from Book import Book
-import json
+
 
 class BookStoreServer:
+
+    ok_status_code = 200
+    conflict_status_code = 409
+    not_found_status_code = 404
+    bad_request_status_code = 400
 
     def __init__(self, host: str, port: int, book_store):
         self.__app = Flask(__name__)
@@ -41,10 +46,10 @@ class BookStoreServer:
         error_message = self.__book_store.add_book(new_book)
         if error_message == "":
             result = self.__book_store.get_num_of_books() # The new ID is the number of books after the adding
-            status = 200
+            status = BookStoreServer.ok_status_code
         else:
             result = ""
-            status = 409
+            status = BookStoreServer.conflict_status_code
 
         response_json = self.__generate_json_response(result, error_message)
 
@@ -78,11 +83,11 @@ class BookStoreServer:
         if genres is None or is_sublist(main_list=self.__book_store.get_genres(), sub_list=genres):
             books_df = self.__book_store.get_books(*filters)
             result = len(books_df)
-            status = 200
+            status = BookStoreServer.ok_status_code
 
         else:
             result = ""
-            status = 400
+            status = BookStoreServer.bad_request_status_code
 
         return self.__generate_json_response(result, ""), status
 
@@ -94,11 +99,11 @@ class BookStoreServer:
             filtered_books_df = self.__book_store.get_books(*filters)
             filtered_books_df = filtered_books_df.sort_values(by='title')
             result = list(filtered_books_df.apply(lambda row: row.to_dict(), axis=1))
-            status = 200
+            status = BookStoreServer.ok_status_code
 
         else:
             result = ""
-            status = 400
+            status = BookStoreServer.bad_request_status_code
 
         response_json = self.__generate_json_response(result, "")
         return response_json, status
@@ -108,10 +113,10 @@ class BookStoreServer:
         result, book_was_found = self.__book_store.get_book_by_id(id, as_dict=True)
         if book_was_found:
             error_message = ""
-            status = 200
+            status = BookStoreServer.ok_status_code
         else:
             error_message = f"Error: no such Book with id {id}"
-            status = 404
+            status = BookStoreServer.not_found_status_code
 
         return self.__generate_json_response(result, error_message), status
 
@@ -123,17 +128,17 @@ class BookStoreServer:
         if book_was_found == False:
             result = ""
             error_message = f"Error: no such Book with id {id}"
-            status = 404
+            status = BookStoreServer.not_found_status_code
         elif new_price <= 0:
             result = ""
             error_message = f"Error: price update for book [{id}] must be a positive integer"
-            status = 409
+            status = BookStoreServer.conflict_status_code
         else:
             old_price = book_series["price"]
             result = old_price
             self.__book_store.update_book_price(id, new_price)
             error_message = ""
-            status = 200
+            status = BookStoreServer.ok_status_code
 
         return self.__generate_json_response(result, error_message), status
 
@@ -144,21 +149,19 @@ class BookStoreServer:
             self.__book_store.remove_book_by_id(id)
             result = self.__book_store.get_num_of_books()
             error_message = ""
-            status = 200
+            status = BookStoreServer.ok_status_code
         else:
             result = ""
             error_message = f"Error: no such Book with id {id}"
-            status = 404
+            status = BookStoreServer.not_found_status_code
 
         return self.__generate_json_response(result, error_message), status
-
 
     def __generate_json_response(self, result, error_message):
         response_json = self.__json_response_template
         response_json["result"] = result
         response_json["errorMessage"] = error_message
         return response_json
-
 
 
 
