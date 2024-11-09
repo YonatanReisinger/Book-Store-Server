@@ -40,8 +40,6 @@ class BookStore:
             # Add existing key-value pairs to the new dictionary
             for key, value in new_book_properties.items():
                 new_book_properties_in_store[key] = value
-            book_title_in_store = new_book.title.lower()
-            new_book_properties_in_store["title"] = book_title_in_store
             self.__books_data = self.__books_data._append(new_book_properties_in_store, ignore_index=True)
             error_message = ""
 
@@ -66,7 +64,8 @@ class BookStore:
 
     def is_book_in_store(self, book: Book):
         book_title_in_store = book.title.lower()
-        return book_title_in_store in self.__books_data["title"].values
+        lower_case_titles = self.__books_data["title"].apply(lambda title: title.lower())
+        return book_title_in_store in lower_case_titles.values
 
     def is_book_print_year_in_range(self, book: Book):
         return self.__range_of_valid_print_years[0] <= book.year <= self.__range_of_valid_print_years[1]
@@ -79,7 +78,10 @@ class BookStore:
 
         params = [author, price_bigger_than, price_less_than, year_bigger_than, year_less_than, genres]
 
-        condition_author = self.__books_data["author"] == author
+        if author != None:
+            condition_author = self.__books_data["author"].str.lower() == author.lower()  # Comparison is case-insensitive
+        else:
+            condition_author = None
         condition_price_bigger_than = self.__books_data["price"] >= price_bigger_than
         condition_price_less_than = self.__books_data["price"] <= price_less_than
         condition_year_bigger_than = self.__books_data["year"] >= year_bigger_than
