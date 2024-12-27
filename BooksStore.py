@@ -1,5 +1,7 @@
 import pandas as pd
 from Book import Book
+from PostgresDbHandler import PostgresDbHandler
+from MongoDbHandler import MongoDbHandler
 
 class BookStore:
 
@@ -14,7 +16,8 @@ class BookStore:
         self.set_range_of_valid_publication_year(range_of_valid_print_years)
         self.set_books_properties(books_properties)
 
-        self.__books_data = pd.DataFrame(columns=books_properties)
+        self.__postgres_db_handler = PostgresDbHandler()
+        self.__mongo_db_handler = MongoDbHandler()
         self.__online_store_server = None
 
     # --------------------- State Changers ---------------------

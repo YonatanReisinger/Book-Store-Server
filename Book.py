@@ -1,15 +1,28 @@
+from PostgresBook import PostgresBook
+from MongoBook import MongoBook
+
 class Book:
     books_properties = ["title", "author", "price", "year", "genres"]
 
-    def __init__(self, title: str, author: str, print_year: int, price: int, genres: list):
+    def __init__(self, id: int ,title: str, author: str, print_year: int, price: int, genres: list):
+        self.id = id
         self.title = title
         self.author = author
         self.year = print_year
         self.price = price
         self.genres = genres
+        self.sql_book = PostgresBook(id, title, author, print_year, price, genres)
+        self.mongo_book = MongoBook(id, title, author, print_year, price, genres)
 
     def get_properties(self):
-        return self.__dict__
+        return {
+            'id': self.id,
+            'title': self.title,
+            'author': self.author,
+            'year': self.year,
+            'price': self.price,
+            'genres': self.genres
+        }
 
     @staticmethod
     def dict_to_book(dictionary: dict):
